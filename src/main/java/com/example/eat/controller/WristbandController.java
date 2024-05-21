@@ -3,6 +3,7 @@ package com.example.eat.controller;
 import com.example.eat.model.dto.CommonResult;
 import com.example.eat.model.dto.param.wristband.FamilyCreateDto;
 import com.example.eat.model.dto.res.BlankRes;
+import com.example.eat.model.dto.res.sport.SportsResponse;
 import com.example.eat.model.dto.res.wristband.*;
 import com.example.eat.service.WristbandService;
 import jakarta.validation.Valid;
@@ -57,8 +58,8 @@ public class WristbandController {
     }
 
     @GetMapping("/user/activitie/recommend")
-    CommonResult<List<RecommendActivitieRes>> getRecommendActivitie(){
-        return wristbandService.getRecommendActivitie();
+    CommonResult<SportsResponse> getRecommendActivitie(@RequestParam String type){
+        return wristbandService.getRecommendActivitie(type);
     }
 
     @GetMapping("/user/my/encode")

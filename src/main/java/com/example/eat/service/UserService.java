@@ -8,6 +8,7 @@ import com.example.eat.model.dto.param.user.PutUser;
 import com.example.eat.model.dto.res.BlankRes;
 import com.example.eat.model.dto.res.user.LoginRes;
 import com.example.eat.model.dto.res.user.UserRes;
+import com.example.eat.model.dto.res.wish.WishResponse;
 import com.example.eat.model.po.user.User;
 
 public interface UserService extends IService<User> {
@@ -25,4 +26,10 @@ public interface UserService extends IService<User> {
     CommonResult<BlankRes> updateUserSignature(String signature);
 
     CommonResult<BlankRes> getCode(String telephone);
+
+    CommonResult<BlankRes> addWish(String content);
+
+    CommonResult<WishResponse> getWish(Integer pageNum, Integer pageSize);
+    String getAvatar(Integer userId);
+    String getNickName(Integer userId);
 }

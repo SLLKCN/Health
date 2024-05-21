@@ -2,6 +2,7 @@ package com.example.eat.controller;
 
 import com.example.eat.model.dto.CommonResult;
 import com.example.eat.model.dto.param.question.QuestionDto;
+import com.example.eat.model.dto.res.question.ExpertResponser;
 import com.example.eat.model.dto.res.question.QuestionRes;
 import com.example.eat.model.dto.res.question.QuestionsGetRes;
 import com.example.eat.service.QuestionService;
@@ -9,6 +10,8 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @Slf4j
@@ -21,7 +24,12 @@ public class QuestionController {
     }
     @GetMapping("/questions/history")
     CommonResult<QuestionsGetRes> getQuestionHistory(@RequestParam(defaultValue = "1") Integer pageNum,
-                                                     @RequestParam(defaultValue = "10") Integer pageSize){
-        return questionService.getQuestionHistory(pageNum,pageSize);
+                                                     @RequestParam(defaultValue = "10") Integer pageSize,
+                                                     @RequestParam(required = false) Integer expert){
+        return questionService.getQuestionHistory(pageNum,pageSize,expert);
+    }
+    @GetMapping("/expert")
+    CommonResult<List<ExpertResponser>> getExpert(){
+        return questionService.getExpert();
     }
 }

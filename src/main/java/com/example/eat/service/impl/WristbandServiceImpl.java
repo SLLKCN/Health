@@ -2,14 +2,20 @@ package com.example.eat.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.eat.dao.sport.SportInfoDao;
 import com.example.eat.dao.wristband.*;
 import com.example.eat.model.dto.CommonResult;
 import com.example.eat.model.dto.param.wristband.FamilyCreateDto;
 import com.example.eat.model.dto.param.wristband.FitBit;
 import com.example.eat.model.dto.res.BlankRes;
 import com.example.eat.model.dto.param.wristband.TokenResponseDTO;
+import com.example.eat.model.dto.res.sport.SportResponse;
+import com.example.eat.model.dto.res.sport.SportsResponse;
 import com.example.eat.model.dto.res.wristband.*;
+import com.example.eat.model.po.sport.SportInfo;
 import com.example.eat.model.po.wristband.*;
 import com.example.eat.service.WristbandService;
 import com.example.eat.util.JwtUtils;
@@ -52,6 +58,8 @@ public class WristbandServiceImpl extends ServiceImpl<WristbandDao, Wristband> i
     SleepDao sleepDao;
     @Autowired
     FamilyInfoDao familyInfoDao;
+    @Autowired
+    SportInfoDao sportInfoDao;
     @Override
     public CommonResult<String> getUrl() {
         //判断是否存在该用户
@@ -377,7 +385,7 @@ public class WristbandServiceImpl extends ServiceImpl<WristbandDao, Wristband> i
     }
 
     @Override
-    public CommonResult<List<RecommendActivitieRes>> getRecommendActivitie() {
+    public CommonResult<SportsResponse> getRecommendActivitie(String type) {
         //判断是否存在该用户
         Integer userId;
         try {
@@ -386,7 +394,9 @@ public class WristbandServiceImpl extends ServiceImpl<WristbandDao, Wristband> i
             log.warn("用户不存在");
             return CommonResult.fail("用户不存在");
         }
-        List<RecommendActivitieRes> recommendActivitieRes=new ArrayList<>();
+        SportsResponse sportsResponse=new SportsResponse();
+        List<SportResponse> sportResponseList=new ArrayList<>();
+        int intensity;
         try{
             QueryWrapper<Wristband> wristbandQueryWrapper=new QueryWrapper<>();
             wristbandQueryWrapper.between("time", LocalDate.now().atStartOfDay(), LocalDate.now().plusDays(1).atStartOfDay());
@@ -397,29 +407,34 @@ public class WristbandServiceImpl extends ServiceImpl<WristbandDao, Wristband> i
             if(wristbandList.size()!=0||wristbandList!=null){
                 heartrate=wristbandList.get(0).getHeartrate();
             }
-
             if(heartrate>90){
-                RecommendActivitieRes temp1=new RecommendActivitieRes("骑车四公里，锻炼身体","消耗两百卡","a3b469ee-743b-469f-8a2e-507d0255caeaimage.jpeg");
-                RecommendActivitieRes temp2=new RecommendActivitieRes("慢跑两公里，可以缓解压力","消耗两百卡","a3b469ee-743b-469f-8a2e-507d0255caeaimage.jpeg");
-                RecommendActivitieRes temp3=new RecommendActivitieRes("跳绳五百个，消耗热量","消耗一百卡","a3b469ee-743b-469f-8a2e-507d0255caeaimage.jpeg");
-
-                recommendActivitieRes.add(temp1);
-                recommendActivitieRes.add(temp2);
-                recommendActivitieRes.add(temp3);
+                intensity=2;
             }else {
-                RecommendActivitieRes temp1=new RecommendActivitieRes("散散步，放松一下心情","消耗两百卡","a3b469ee-743b-469f-8a2e-507d0255caeaimage.jpeg");
-                RecommendActivitieRes temp2=new RecommendActivitieRes("开合跳，燃脂！","十分钟消耗一百大卡","a3b469ee-743b-469f-8a2e-507d0255caeaimage.jpeg");
-                RecommendActivitieRes temp3=new RecommendActivitieRes("深蹲10*10","消耗八十卡","a3b469ee-743b-469f-8a2e-507d0255caeaimage.jpeg");
-
-                recommendActivitieRes.add(temp1);
-                recommendActivitieRes.add(temp2);
-                recommendActivitieRes.add(temp3);
+                intensity=1;
             }
         }catch (Exception e){
+            intensity=3;
             e.printStackTrace();
-            return CommonResult.fail("获取运动建议失败");
+            log.warn("未收集用户手环信息");
         }
-        return CommonResult.success("获取运动建议成功",recommendActivitieRes);
+        QueryWrapper<SportInfo> sportInfoQueryWrapper=new QueryWrapper<>();
+        if(intensity!=3){
+            sportInfoQueryWrapper.eq("intensity",intensity);
+        }
+        if(!type.isEmpty()){
+            sportInfoQueryWrapper.eq("type",type);
+        }
+        sportInfoQueryWrapper.orderByAsc("RAND()");
+        IPage<SportInfo> sportInfoIPage= sportInfoDao.selectPage(new Page<>(1,3),sportInfoQueryWrapper);
+        for(SportInfo temp:sportInfoIPage.getRecords()){
+            SportResponse sportResponse=new SportResponse();
+            sportResponse.setName(temp.getName());
+            sportResponse.setIntroduce(temp.getIntroduce());
+            sportResponse.setImage(temp.getImage());
+            sportResponseList.add(sportResponse);
+        }
+        sportsResponse.setSportList(sportResponseList);
+        return CommonResult.success("获取运动",sportsResponse);
     }
 
     @Override

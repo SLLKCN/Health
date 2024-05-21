@@ -7,12 +7,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.eat.component.XfXhStreamClient;
 import com.example.eat.config.XfXhConfig;
+import com.example.eat.dao.question.ExpertInfoDao;
+import com.example.eat.dao.question.ExpertiseInfoDao;
 import com.example.eat.dao.question.QuestionInfoDao;
 import com.example.eat.model.dto.CommonResult;
 import com.example.eat.model.dto.param.question.MsgDTO;
 import com.example.eat.model.dto.param.question.QuestionDto;
+import com.example.eat.model.dto.res.question.ExpertResponser;
 import com.example.eat.model.dto.res.question.QuestionRes;
 import com.example.eat.model.dto.res.question.QuestionsGetRes;
+import com.example.eat.model.po.question.ExpertInfo;
 import com.example.eat.model.po.question.QuestionInfo;
 import com.example.eat.service.QuestionService;
 import com.example.eat.util.JwtUtils;
@@ -21,8 +25,12 @@ import com.example.eat.util.XfXhWebSocketListener;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.WebSocket;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,6 +43,14 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
     @Resource
     private XfXhConfig xfXhConfig;
 
+    @Autowired
+    private ExpertInfoDao expertInfoDao;
+
+    @Autowired
+    private ExpertiseInfoDao expertiseInfoDao;
+    @Autowired
+    private QuestionInfoDao questionInfoDao;
+
 
     @Override
     public CommonResult<QuestionRes> sentQuestion(QuestionDto questionDto) {
@@ -46,7 +62,22 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
             log.warn("用户不存在");
             return CommonResult.fail("用户不存在");
         }
+        String question="";
+        if(questionDto.getExpert()==null){
+            questionDto.setExpert(10);
+        }else {
+            try{
+                ExpertInfo expertInfo=expertInfoDao.selectById(questionDto.getExpert());
+                question+=expertInfo.getInitial()+"\n你将扮演这个角色，并按照对应的知识回答我的问题，不需要多余话语，请直接回答我接下来的问题:\n";
+
+            }catch (Exception e){
+                e.printStackTrace();
+                return CommonResult.fail("未找到该顾问");
+            }
+        }
+        question+=questionDto.getQuestion();
         QuestionRes questionRes=new QuestionRes();
+
         try {
             //发送问题，接收答案
             String answer = "";
@@ -66,7 +97,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
                 }
 
                 // 创建消息对象
-                MsgDTO msgDTO = MsgDTO.createUserMsg(questionDto.getQuestion());
+                MsgDTO msgDTO = MsgDTO.createUserMsg(question);
                 // 创建监听器
                 XfXhWebSocketListener listener = new XfXhWebSocketListener();
                 // 发送问题给大模型，生成 websocket 连接
@@ -115,6 +146,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
             questionInfo.setUserId(userId);
             questionInfo.setQuestion(questionDto.getQuestion());
             questionInfo.setAnswer(answer);
+            questionInfo.setExpertId(questionDto.getExpert());
             this.save(questionInfo);
 
             questionRes.setUserId(userId);
@@ -129,7 +161,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
     }
 
     @Override
-    public CommonResult<QuestionsGetRes> getQuestionHistory(Integer pageNum, Integer pageSize) {
+    public CommonResult<QuestionsGetRes> getQuestionHistory(Integer pageNum, Integer pageSize,Integer expert) {
         //判断是否存在该用户
         Integer userId;
         try {
@@ -138,11 +170,15 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
             log.warn("用户不存在");
             return CommonResult.fail("用户不存在");
         }
+        if(expert==null){
+            expert=10;
+        }
         QuestionsGetRes questionsGetRes;
         try{
             Page<QuestionInfo> questionInfoPage=new Page<>(pageNum,pageSize);
             QueryWrapper<QuestionInfo> questionInfoQueryWrapper=new QueryWrapper<>();
             questionInfoQueryWrapper.eq("user_id",userId);
+            questionInfoQueryWrapper.eq("expert_id",expert);
             questionInfoQueryWrapper.orderByDesc("time");
             IPage<QuestionInfo> questionInfoIPage=page(questionInfoPage,questionInfoQueryWrapper);
             questionsGetRes=new QuestionsGetRes(questionInfoIPage.getRecords());
@@ -152,6 +188,20 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionInfoDao, QuestionIn
             return CommonResult.fail("查找历史问题失败");
         }
         return CommonResult.success("查找历史问题成功",questionsGetRes);
+    }
+
+    @Override
+    public CommonResult<List<ExpertResponser>> getExpert() {
+        List<ExpertResponser> expertResponserList=null;
+        try{
+            expertResponserList=expertInfoDao.getExperts();
+        }catch (Exception e){
+            e.printStackTrace();
+            return CommonResult.fail("获取助手失败");
+        }
+
+
+        return CommonResult.success(expertResponserList);
     }
 
     private Boolean checkQuestion(String question){

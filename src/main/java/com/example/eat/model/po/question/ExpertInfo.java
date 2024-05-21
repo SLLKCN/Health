@@ -1,4 +1,4 @@
-package com.example.eat.model.po.music;
+package com.example.eat.model.po.question;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -6,15 +6,11 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 @Data
-@TableName("music_info")
-public class Music {
+@TableName("expert_info")
+public class ExpertInfo {
     @TableId(type = IdType.AUTO)
     private Integer id;
     private String name;
-    private String introduction;
-    private String image;
-    private String music;
-    private Integer favouriteCount;
-
-    private String type;
+    private String post;
+    private String initial;
 }

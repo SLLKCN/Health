@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.eat.dao.question.ExpertInfoDao">
+
+    <!-- expertise_info_mapper.xml -->
+
+    <!-- 定义ResultMap，将查询结果映射到ExpertResponser对象 -->
+    <resultMap id="expertResponserResultMap" type="com.example.eat.model.dto.res.question.ExpertResponser">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="post" column="post"/>
+        <!-- 直接将expertise字段映射为List<String> -->
+        <collection property="expertise" ofType="String">
+            <result column="expertise" />
+        </collection>
+    </resultMap>
+
+    <!-- 定义专业领域的ResultMap -->
+
+    <!-- 定义查询语句 -->
+    <select id="getExperts" resultMap="expertResponserResultMap">
+        SELECT
+            e.id,
+            e.name,
+            e.post,
+            ei.expertise as expertise
+        FROM
+            expert_info e
+                LEFT JOIN
+            expertise_info ei ON e.id = ei.expert_id;
+    </select>
+
+</mapper>

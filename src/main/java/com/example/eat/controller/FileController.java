@@ -2,6 +2,7 @@ package com.example.eat.controller;
 
 import com.example.eat.aop.Pass;
 import com.example.eat.model.dto.CommonResult;
+import com.example.eat.model.dto.res.diary.FoodRes;
 import com.example.eat.model.dto.res.file.FileNamesGetRes;
 import com.example.eat.model.dto.res.file.FileUrlRes;
 import com.example.eat.service.FileService;
@@ -30,5 +31,13 @@ public class FileController {
     @PostMapping("/file")
     CommonResult<FileNamesGetRes> updateFile(@RequestParam("files") List<MultipartFile> files){
         return fileService.updateFile(files);
+    }
+
+    @Pass
+    @PostMapping("/foodrecognition")
+    CommonResult<FoodRes> food(@RequestParam("photoUrl") String filrName){
+        FoodRes foodRes=new FoodRes();
+        foodRes.setFoodName("苹果");
+        return CommonResult.success("成功",foodRes);
     }
 }

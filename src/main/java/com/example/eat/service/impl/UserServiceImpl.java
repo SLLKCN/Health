@@ -1,20 +1,25 @@
 package com.example.eat.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.eat.dao.user.UserDao;
+import com.example.eat.dao.wish.WishInfoDao;
 import com.example.eat.model.dto.CommonResult;
 import com.example.eat.model.dto.param.user.PostUserLogin;
 import com.example.eat.model.dto.param.user.PostUserRegister;
 import com.example.eat.model.dto.param.user.PutUser;
 import com.example.eat.model.dto.res.BlankRes;
+import com.example.eat.model.dto.res.cookbook.CookbooksGetRes;
 import com.example.eat.model.dto.res.user.LoginRes;
 import com.example.eat.model.dto.res.user.UserRes;
+import com.example.eat.model.dto.res.wish.WishResponse;
+import com.example.eat.model.po.cookbook.Cookbook;
 import com.example.eat.model.po.user.User;
+import com.example.eat.model.po.wish.WishInfo;
 import com.example.eat.service.UserService;
-import com.example.eat.util.JwtUtils;
-import com.example.eat.util.SHA256Util;
-import com.example.eat.util.TokenThreadLocalUtil;
+import com.example.eat.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -28,14 +33,23 @@ import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
 public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserService {
     @Autowired
     UserDao userDao;
+    @Autowired
+    WishInfoDao wishInfoDao;
+    @Autowired
+    RedisUtil redisUtil;
+    @Autowired
+    private MinioUtil minioUtil;
     private String signature="SIPC115";
     @Override
     public CommonResult<LoginRes> register(PostUserRegister postUserRegister) {
@@ -53,23 +67,9 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             }
 
 
-            String signature="SIPC115";
-            //加密
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String code=(String) redisUtil.get("verify_code::" + postUserRegister.getTelephone());
 
-            // 将手机号转换为字节数组
-            byte[] phoneNumberBytes = (postUserRegister.getTelephone()+signature).getBytes(StandardCharsets.UTF_8);
-
-            // 计算哈希值
-            byte[] hashBytes = md.digest(phoneNumberBytes);
-
-            // 将哈希值转换为整数
-            long hashValue = 0;
-            for (int i = 0; i < 8; i++) {
-                hashValue = (hashValue << 8) | (hashBytes[i] & 0xFF);
-            }
-
-            if(!postUserRegister.getCode().equals(String.format("%06d", Math.abs(hashValue % 1000000)))){
+            if(!postUserRegister.getCode().equals(code)){
                 return CommonResult.fail("验证码错误");
             }
 
@@ -243,23 +243,9 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             if (userDao.exists(userQueryWrapper)){
                 return CommonResult.fail("该手机号已注册");
             }
-            String signature="SIPC115";
-            //加密
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            String code = StringUtils.generateRandomCode(6);
+            redisUtil.set("verify_code::" + telephone, code, Long.valueOf(1), TimeUnit.MINUTES);
 
-            // 将手机号转换为字节数组
-            byte[] phoneNumberBytes = (telephone+signature).getBytes(StandardCharsets.UTF_8);
-
-            // 计算哈希值
-            byte[] hashBytes = md.digest(phoneNumberBytes);
-
-            // 将哈希值转换为整数
-            long hashValue = 0;
-            for (int i = 0; i < 8; i++) {
-                hashValue = (hashValue << 8) | (hashBytes[i] & 0xFF);
-            }
-
-            String code=String.format("%06d", Math.abs(hashValue % 1000000));
             String mobile=telephone;
 
             String host = "https://gyytz.market.alicloudapi.com";
@@ -295,6 +281,60 @@ public class UserServiceImpl extends ServiceImpl<UserDao, User> implements UserS
             return CommonResult.fail("发送验证码失败");
         }
         return CommonResult.success("发送验证码成功");
+    }
+
+    @Override
+    public CommonResult<BlankRes> addWish(String content) {
+        //判断是否存在该用户
+        Integer userId;
+        try {
+            userId = JwtUtils.getUserIdByToken(TokenThreadLocalUtil.getInstance().getToken());
+        } catch (Exception e) {
+            log.warn("用户不存在");
+            return CommonResult.fail("用户不存在");
+        }
+        WishInfo wishInfo=new WishInfo();
+        wishInfo.setUserId(userId);
+        wishInfo.setContent(content);
+        if (wishInfoDao.insert(wishInfo)==0){
+            return CommonResult.fail("插入失败");
+        }
+        return CommonResult.success("添加心愿成功");
+    }
+
+    @Override
+    public CommonResult<WishResponse> getWish(Integer pageNum, Integer pageSize) {
+        //判断是否存在该用户
+        Integer userId;
+        try {
+            userId = JwtUtils.getUserIdByToken(TokenThreadLocalUtil.getInstance().getToken());
+        } catch (Exception e) {
+            log.warn("用户不存在");
+            return CommonResult.fail("用户不存在");
+        }
+        WishResponse wishResponse=new WishResponse();
+        Page<WishInfo> page = new Page<>(pageNum, pageSize);
+        QueryWrapper<WishInfo> wishInfoQueryWrapper = new QueryWrapper<>();
+        wishInfoQueryWrapper.eq("user_id",userId);
+        IPage<WishInfo> wishInfoIPage=wishInfoDao.selectPage(page,wishInfoQueryWrapper);
+        List<String> wishList=new ArrayList<>();
+        for(WishInfo wishInfo:wishInfoIPage.getRecords()){
+            wishList.add(wishInfo.getContent());
+        }
+        wishResponse.setContents(wishList);
+        return CommonResult.success(wishResponse);
+    }
+
+    @Override
+    public String getAvatar(Integer userId) {
+        User user=this.getById(userId);
+        return minioUtil.downloadFile(user.getAvatar());
+    }
+
+    @Override
+    public String getNickName(Integer userId) {
+        User user=this.getById(userId);
+        return user.getNickname();
     }
 
     public UserRes getUserResById(Integer userId){

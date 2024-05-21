@@ -52,12 +52,15 @@ public class DiaryInfoServiceImpl extends ServiceImpl<DiaryInfoDao, DiaryInfo> i
             QueryWrapper<FoodInfo> foodInfoQueryWrapper=new QueryWrapper<>();
             foodInfoQueryWrapper.eq("name",diaryCreateDto.getName());
             FoodInfo foodInfo=foodInfoDao.selectOne(foodInfoQueryWrapper);
+            if(diaryCreateDto.getName().contains("芒果")){
+                diaryInfo.setFoodId(7);
+            }
             if(diaryCreateDto.getName().contains("果")||diaryCreateDto.getName().contains("桃")){
                 diaryInfo.setFoodId(6);
             }
+
             else if(foodInfo==null){
-                diaryInfo.setFoodId(7);
-//                return CommonResult.fail("数据库中未记录该食品数据");
+                diaryInfo.setFoodId(12);
             }
             else {
                 diaryInfo.setFoodId(foodInfo.getId());

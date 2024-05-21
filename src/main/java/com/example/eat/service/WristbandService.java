@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.eat.model.dto.CommonResult;
 import com.example.eat.model.dto.param.wristband.FamilyCreateDto;
 import com.example.eat.model.dto.res.BlankRes;
+import com.example.eat.model.dto.res.sport.SportsResponse;
 import com.example.eat.model.dto.res.wristband.*;
 import com.example.eat.model.po.wristband.Wristband;
 
@@ -26,7 +27,7 @@ public interface WristbandService extends IService<Wristband> {
 
     CommonResult<Spo2Res> getSpo2();
 
-    CommonResult<List<RecommendActivitieRes>> getRecommendActivitie();
+    CommonResult<SportsResponse> getRecommendActivitie(String type);
 
     CommonResult<EncodeRes> getMyEncodeRes();
 

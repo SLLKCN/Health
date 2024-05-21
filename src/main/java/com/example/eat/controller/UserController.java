@@ -8,16 +8,20 @@ import com.example.eat.model.dto.param.user.PutUser;
 import com.example.eat.model.dto.res.BlankRes;
 import com.example.eat.model.dto.res.user.LoginRes;
 import com.example.eat.model.dto.res.user.UserRes;
+import com.example.eat.model.dto.res.wish.WishResponse;
 import com.example.eat.service.UserService;
 import com.example.eat.util.MinioUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @Slf4j
+@Validated
 public class UserController {
     @Autowired
     MinioUtil minioUtil;
@@ -59,4 +63,14 @@ public class UserController {
         return userService.getCode(telephone);
     }
 
+    @PostMapping("/wish")
+    CommonResult<BlankRes> addWish(@Size(max = 50, message = "心愿过长") @RequestParam String content){
+        return userService.addWish(content);
+    }
+
+    @GetMapping("/wish")
+    CommonResult<WishResponse> getWish(@RequestParam(defaultValue = "1") Integer pageNum,
+                                       @RequestParam(defaultValue = "10") Integer pageSize){
+        return userService.getWish(pageNum,pageSize);
+    }
 }

@@ -6,4 +6,5 @@ import lombok.Data;
 public class QuestionDto {
 
     private String question;
+    private Integer expert;
 }

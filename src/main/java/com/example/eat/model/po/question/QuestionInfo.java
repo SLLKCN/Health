@@ -19,4 +19,5 @@ public class QuestionInfo {
     private String answer;
     @TableField(fill = FieldFill.INSERT,jdbcType = TIMESTAMP)
     private Timestamp time;
+    private Integer expertId;
 }

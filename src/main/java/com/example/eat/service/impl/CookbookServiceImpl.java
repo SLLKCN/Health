@@ -65,6 +65,7 @@ public class CookbookServiceImpl extends ServiceImpl<CookbookDao, Cookbook> impl
 
         try{
             List<String> recommand=recommendUtil.getCoobookRecommend(userId);
+            System.out.println(recommand);
             if(recommand==null||recommand.size()==0){
                 recommand=new ArrayList<>();
                 recommand.add("-1");

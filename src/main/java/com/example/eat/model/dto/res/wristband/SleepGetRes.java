@@ -24,7 +24,12 @@ public class SleepGetRes {
         public SleepRes(Sleep sleep){
             this.sleepMinute=sleep.getSleepMinute();
             this.inBedMinute=sleep.getInBedMinute();
-            this.score=this.sleepMinute*100/this.inBedMinute;
+            if(this.inBedMinute==0){
+                this.score=0;
+            }else {
+                this.score=this.sleepMinute*100/this.inBedMinute;
+            }
+
 
             LocalDateTime timestamp = LocalDateTime.parse(sleep.getDate().toString(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S"));
             String formattedDate=timestamp.getMonthValue()+"."+timestamp.getDayOfMonth();

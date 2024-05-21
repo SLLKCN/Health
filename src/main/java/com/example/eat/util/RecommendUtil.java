@@ -15,8 +15,8 @@ public class RecommendUtil {
         List<String> snList = null;
         try {
             //Python解释器
-            String s1 = "/usr/local/anaconda/anaconda3/envs/recommend/bin/python";
-            String[] args1 = new String[]{s1, "/usr/local/Jre/Python/recommendationMusic.py", String.valueOf(id)};
+            String s1 = "/usr/local/product/Anaconda/anaconda3/envs/disk_detect_env/bin/python";
+            String[] args1 = new String[]{s1, "/usr/local/product/Python/Health/recommendationMusic.py", String.valueOf(id)};
             Process proc = Runtime.getRuntime().exec(args1);// 执行py文件
             //用输入输出流来截取结果
             BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -43,8 +43,8 @@ public class RecommendUtil {
         List<String> snList = null;
         try {
             //Python解释器
-            String s1 = "/usr/local/anaconda/anaconda3/envs/recommend/bin/python";
-            String[] args1 = new String[]{s1, "/usr/local/Jre/Python/recommendationMusicList.py", String.valueOf(id)};
+            String s1 = "/usr/local/product/Anaconda/anaconda3/envs/disk_detect_env/bin/python";
+            String[] args1 = new String[]{s1, "/usr/local/product/Python/Health/recommendationMusicList.py", String.valueOf(id)};
             Process proc = Runtime.getRuntime().exec(args1);// 执行py文件
             //用输入输出流来截取结果
             BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
@@ -71,8 +71,8 @@ public class RecommendUtil {
         List<String> snList = null;
         try {
             //Python解释器
-            String s1 = "/usr/local/anaconda/anaconda3/envs/recommend/bin/python";
-            String[] args1 = new String[]{s1, "/usr/local/Jre/Python/recommendationCookbook.py", String.valueOf(id)};
+            String s1 = "/usr/local/product/Anaconda/anaconda3/envs/disk_detect_env/bin/python";
+            String[] args1 = new String[]{s1, "/usr/local/product/Python/Health/recommendationCookbook.py", String.valueOf(id)};
             Process proc = Runtime.getRuntime().exec(args1);// 执行py文件
             //用输入输出流来截取结果
             BufferedReader in = new BufferedReader(new InputStreamReader(proc.getInputStream()));
